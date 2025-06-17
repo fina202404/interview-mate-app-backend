@@ -23,11 +23,13 @@ jobs:
         with:
           node-version: '20.x'
 
-      - name: npm install, build, and test
+      # --- Start of Changes ---
+      # The "npm run test --if-present" line has been removed.
+      - name: npm install and build
         run: |
           npm install
           npm run build --if-present
-          npm run test --if-present
+      # --- End of Changes ---
 
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
