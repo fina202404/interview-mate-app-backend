@@ -86,34 +86,39 @@ exports.getMe = async (req, res) => {
 // @desc    Forgot password
 // @route   POST /api/auth/forgotpassword
 // @access  Public
-exports.forgotPassword = async (req, res) => {
-    const { email } = req.body;
+exports.forgotPassword = async (req, res, next) => { 
     console.log("--- 1. EXECUTING forgotPassword CONTROLLER ---");
 
     try {
-        console.log("--- 2. Searching for user with email:", email);
+        const { email } = req.body;
+        if (!email) {
+            console.error("--- ERROR: Request body is missing an email address. ---");
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+        console.log("--- 2. Email received from request body:", email);
+
         const user = await User.findOne({ email });
+        console.log("--- 3. User.findOne database query has completed. ---");
 
         if (!user) {
-            console.log("--- 3a. User not found. Sending generic success response.");
-            // We still send a success response for security to not reveal if an email exists
-            return res.status(200).json({ success: true, message: 'If an account with that email exists, a password reset link has been sent.' });
+            console.log("--- 4a. User was not found in the database. ---");
+            return res.status(200).json({ success: true, message: 'If an account with that email exists, a link will be sent.' });
         }
-        console.log("--- 3b. User found:", user.email);
+        console.log("--- 4b. User was found:", user.email);
 
-        console.log("--- 4. Generating reset token...");
         const resetToken = user.getResetPasswordToken();
-        console.log("--- 5. Token generated. Preparing to save user...");
+        console.log("--- 5. Reset token has been generated in memory. ---");
 
         await user.save({ validateBeforeSave: false });
-        console.log("--- 6. User saved successfully with reset token.");
+        console.log("--- 6. User has been successfully saved to the database with the new token. ---");
 
-        // IMPORTANT: Sending the token back to the frontend so EmailJS can use it.
-        res.status(200).json({ success: true, resetToken: resetToken });
+        // Sending the token back to the frontend so it can be used.
+        return res.status(200).json({ success: true, resetToken: resetToken });
 
     } catch (error) {
-        console.error("--- CATCH BLOCK EXECUTED --- Forgot password error:", error);
-        res.status(500).json({ success: false, message: 'Error processing request' });
+        console.error("--- CATCH BLOCK HAS BEEN HIT --- THE ERROR IS:", error);
+        // This passes the error to your global Express error handler, which is more reliable.
+        return next(error); 
     }
 };
 
