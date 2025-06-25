@@ -88,20 +88,31 @@ exports.getMe = async (req, res) => {
 // @access  Public
 exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
+    console.log("--- 1. EXECUTING forgotPassword CONTROLLER ---");
 
-console.log("--- 1. EXECUTING forgotPassword CONTROLLER ---"); 
-  
     try {
+        console.log("--- 2. Searching for user with email:", email);
         const user = await User.findOne({ email });
+
         if (!user) {
+            console.log("--- 3a. User not found. Sending generic success response.");
+            // We still send a success response for security to not reveal if an email exists
             return res.status(200).json({ success: true, message: 'If an account with that email exists, a password reset link has been sent.' });
         }
+        console.log("--- 3b. User found:", user.email);
+
+        console.log("--- 4. Generating reset token...");
         const resetToken = user.getResetPasswordToken();
+        console.log("--- 5. Token generated. Preparing to save user...");
+
         await user.save({ validateBeforeSave: false });
-        console.log(`Password reset token for ${email}: ${resetToken}`);
-        res.status(200).json({ success: true, message: 'Password reset instructions sent if email is registered.' });
+        console.log("--- 6. User saved successfully with reset token.");
+
+        // IMPORTANT: Sending the token back to the frontend so EmailJS can use it.
+        res.status(200).json({ success: true, resetToken: resetToken });
+
     } catch (error) {
-        console.error('Forgot password error:', error);
+        console.error("--- CATCH BLOCK EXECUTED --- Forgot password error:", error);
         res.status(500).json({ success: false, message: 'Error processing request' });
     }
 };
