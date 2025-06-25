@@ -88,6 +88,9 @@ exports.getMe = async (req, res) => {
 // @access  Public
 exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
+
+console.log("--- 1. EXECUTING forgotPassword CONTROLLER ---"); 
+  
     try {
         const user = await User.findOne({ email });
         if (!user) {
