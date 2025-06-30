@@ -2,6 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 require('dotenv').config();
+const sendEmail = require('../utils/sendEmail');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -83,23 +84,50 @@ exports.getMe = async (req, res) => {
   }
 };
 
-// @desc    Forgot password
-// @route   POST /api/auth/forgotpassword
-// @access  Public
-exports.forgotPassword = async (req, res) => {
-    const { email } = req.body;
+
+exports.forgotPassword = async (req, res, next) => {
+    console.log("--- 1. BACKEND forgotPassword controller started. ---");
     try {
+        const { email } = req.body;
         const user = await User.findOne({ email });
+
         if (!user) {
-            return res.status(200).json({ success: true, message: 'If an account with that email exists, a password reset link has been sent.' });
+            console.log("User not found, but sending generic success response for security.");
+            return res.status(200).json({ success: true, message: 'If an account with that email exists, a link will be sent.' });
         }
+
+        // Get reset token from your User model
         const resetToken = user.getResetPasswordToken();
         await user.save({ validateBeforeSave: false });
-        console.log(`Password reset token for ${email}: ${resetToken}`);
-        res.status(200).json({ success: true, message: 'Password reset instructions sent if email is registered.' });
+        console.log("Reset token generated and saved for user.");
+
+        // Create reset URL
+        // IMPORTANT: Use your FRONTEND's URL here
+        const resetUrl = `${process.env.FRONTEND_URL}/resetpassword/${resetToken}`;
+
+        const message = `
+            <h1>You have requested a password reset</h1>
+            <p>Please go to this link to reset your password:</p>
+            <a href="${resetUrl}" clicktracking=off>${resetUrl}</a>
+            <p>This link will expire in 10 minutes.</p>
+        `;
+
+        // Try to send the email using the utility
+        await sendEmail({
+            email: user.email,
+            subject: 'Password Reset Request',
+            message
+        });
+
+        console.log("Password reset email sent successfully.");
+        res.status(200).json({ success: true, message: 'Password reset email sent.' });
+
     } catch (error) {
-        console.error('Forgot password error:', error);
-        res.status(500).json({ success: false, message: 'Error processing request' });
+        console.error("--- FORGOT PASSWORD ERROR ---", error);
+        // Clear the token fields if there was an error sending the email
+        // This requires finding the user again, or saving the user object before the error
+        // For now, we'll just log the error.
+        res.status(500).json({ success: false, message: 'Email could not be sent.' });
     }
 };
 
