@@ -98,6 +98,8 @@ exports.forgotPassword = async (req, res, next) => {
 
         // Get reset token from your User model
         const resetToken = user.getResetPasswordToken();
+        console.log("--- 5. Reset token has been generated in memory. ---");
+
         await user.save({ validateBeforeSave: false });
         console.log("Reset token generated and saved for user.");
 
