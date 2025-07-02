@@ -36,6 +36,3 @@ exports.createCheckoutSession = async (req, res) => {
         console.error('Stripe session error:', error);
         res.status(500).json({ message: 'Error creating Stripe checkout session.' });
     }
-
-
-Message @Rajitha
