@@ -1,4 +1,3 @@
-// backend/controllers/checkoutController.js - NEW CODE
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const planToPriceId = {
@@ -7,7 +6,7 @@ const planToPriceId = {
 };
 
 exports.createCheckoutSession = async (req, res) => {
-    const { plan } = req.body; 
+    const { plan } = req.body;
     const priceId = planToPriceId[plan];
 
     if (!priceId) {
@@ -26,8 +25,9 @@ exports.createCheckoutSession = async (req, res) => {
                     quantity: 1,
                 },
             ],
-            success_url: `${process.env.FRONTEND_URL}/app/subscription-success?payment_status=success`,
-            cancel_url: `${process.env.FRONTEND_URL}/choose-plan`,
+            
+            success_url: ${process.env.FRONTEND_URL}/subscription-success?payment_status=success,
+            cancel_url: ${process.env.FRONTEND_URL}/packages, // Changed to /packages as it's a more logical cancel URL
         });
 
         res.status(200).json({ url: session.url });
@@ -36,4 +36,6 @@ exports.createCheckoutSession = async (req, res) => {
         console.error('Stripe session error:', error);
         res.status(500).json({ message: 'Error creating Stripe checkout session.' });
     }
-};
+
+
+Message @Rajitha
