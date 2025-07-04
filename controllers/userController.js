@@ -60,11 +60,13 @@ exports.upgradeSubscription = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
+      console.error('Upgrade Error: User not found for ID:', req.user.id);
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
     const { plan } = req.body;
     if (!['pro', 'enterprise'].includes(plan)) {
+      console.error('Upgrade Error: Invalid plan specified:', plan);
       return res.status(400).json({ success: false, message: 'Invalid plan specified.' });
     }
     
@@ -73,28 +75,34 @@ exports.upgradeSubscription = async (req, res) => {
       user.maxResumeAnalyses = 20;
       user.maxRealInterviews = 20;
       user.maxVoiceInterviews = 20;
-      user.maxAvatarInterviews = 20;
     } else if (plan === 'enterprise') {
       user.subscriptionTier = 'enterprise';
-      const unlimited = 999999;
+      const unlimited = -1; 
       user.maxResumeAnalyses = unlimited;
       user.maxRealInterviews = unlimited;
       user.maxVoiceInterviews = unlimited;
-      user.maxAvatarInterviews = unlimited;
     }
     
+    // Reset usage counts
     user.resumeAnalysisCount = 0;
     user.realInterviewCount = 0;
     user.voiceInterviewCount = 0;
-    user.avatarInterviewCount = 0;
 
-    await user.save();
-    res.json({ success: true, message: `Subscription upgraded to ${plan}`, user: user });
-    
+    // --- ADDED LOGGING ---
+    console.log(`Attempting to save user ${user.email} with new tier: ${user.subscriptionTier}`);
+    const updatedUser = await user.save();
+    console.log(`Successfully saved user ${updatedUser.email}. New limits set.`);
+    // --- END OF LOGGING ---
+
+    res.json({ success: true, message: `Subscription upgraded to ${plan}`, user: updatedUser });
+
   } catch (error) {
+    // This will now catch errors from the .save() operation
+    console.error('Subscription upgrade save error:', error);
     res.status(500).json({ success: false, message: 'Server error during subscription upgrade.' });
   }
 };
+
 exports.getSubscriptionStatus = async (req, res) => {
     try {
         // ✅ Re-fetch the user directly from the database

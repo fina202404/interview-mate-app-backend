@@ -38,13 +38,20 @@ exports.checkUsageLimit = (featureType) => {
                 default:
                     return res.status(400).json({ success: false, message: 'Invalid feature type.' });
             }
-            console.log(`--- STEP C: Fields set. countField: ${countField} ---`);
+            console.log(`--- STEP C: Fields set. countField: ${countField}, maxField: ${maxField} ---`);
 
-            console.log(`--- STEP D: About to check if ${user[countField]} >= ${user[maxField]} ---`);
-            if (user[countField] >= user[maxField]) {
+            const currentCount = user[countField];
+            const maxLimit = user[maxField];
+
+            // --- START OF THE FIX ---
+            console.log(`--- STEP D: About to check if plan is limited AND if ${currentCount} >= ${maxLimit} ---`);
+            
+            // Only check the limit if the plan is NOT unlimited (maxLimit is not -1)
+            if (maxLimit !== -1 && currentCount >= maxLimit) {
                 console.log(`--- STEP E: Usage limit reached. EXITING. ---`);
                 return res.status(403).json({ message: 'Usage limit reached.' });
             }
+            // --- END OF THE FIX ---
 
             console.log(`--- STEP F: Check passed. Proceeding to increment. ---`);
             user[countField] += 1;
