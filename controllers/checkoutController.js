@@ -1,4 +1,3 @@
-// backend/controllers/checkoutController.js - NEW CODE
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const planToPriceId = {
